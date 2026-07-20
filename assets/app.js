@@ -76,12 +76,19 @@ const PAGS={
 
   tickets(){return head('TICKETS','DE SUPORTE','Atendimentos da equipe')+
     `<div class="cards">
-      ${card('verde','🟢',0,'Abertos')}
-      ${card('rosa','🔴',0,'Fechados')}
-      ${card('roxo','📊',0,'Total')}
-      ${card('dourado','⏱️',0,'Hoje')}
+      ${card('verde','🟢','0','Abertos')}
+      ${card('rosa','🔴','0','Fechados')}
+      ${card('roxo','📊','0','Total')}
+      ${card('dourado','⏱️','0','Hoje')}
     </div>
-    <div class="painel-box"><h3>🎟️ Registro de tickets</h3><div class="bx-sub">Quem abriu, quem atendeu e quando.</div>${vazio('🎟️','Sem tickets registrados','Os tickets aparecem quando o Dibrados Bot enviar os dados.')}</div>`;},
+    <div class="painel-box"><h3>🎟️ Registro de tickets</h3><div class="bx-sub">Quem abriu, quem atendeu e quando.</div>
+      <div class="tk-filtros">
+        <input id="tk-busca" class="tk-input" type="text" placeholder="🔍 Buscar por nome ou nº do ticket..." oninput="filtrarTickets()">
+        <input id="tk-data" class="tk-input tk-input-data" type="date" onchange="filtrarTickets()">
+        <button class="tk-limpar" onclick="limparFiltros()">Limpar</button>
+      </div>
+      <div id="lista-tickets">${vazio('🎟️','Carregando tickets...','Buscando os dados no Supabase.')}</div>
+    </div>`;},
 
   comandos(){return head('COMANDOS','DO BOT','Uso dos comandos')+
     `<div class="painel-box"><h3>🤖 Comandos mais usados</h3><div class="bx-sub">Lista de comandos e quantas vezes foram usados.</div>${vazio('🤖','Sem dados de comandos','Aparece quando o bot registrar cada uso de comando.')}</div>`;},
@@ -105,12 +112,87 @@ const PAGS={
     <div class="painel-box"><h3>🛡️ Registro de moderação</h3><div class="bx-sub">Bans, mutes, kicks e quem aplicou.</div>${vazio('🛡️','Sem logs ainda','Os logs de moderação aparecem quando o bot enviar os dados.')}</div>`;},
 };
 
+/* ===== TICKETS (dados reais do Supabase) ===== */
+let TICKETS_CACHE=[];
+function escapar(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function formatarData(iso){if(!iso)return '';try{const d=new Date(iso);return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+function cssTickets(){
+  if(document.getElementById('css-tickets'))return;
+  const st=document.createElement('style');st.id='css-tickets';
+  st.textContent=`
+  .tk-filtros{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+  .tk-input{flex:1;min-width:150px;background:rgba(30,18,55,.6);border:1px solid rgba(177,92,255,.3);border-radius:10px;padding:10px 12px;color:#e9dcff;font-size:14px;outline:none}
+  .tk-input:focus{border-color:rgba(177,92,255,.7);box-shadow:0 0 0 2px rgba(177,92,255,.2)}
+  .tk-input-data{flex:0 0 auto;min-width:130px;color-scheme:dark}
+  .tk-input::placeholder{color:#8a75b5}
+  .tk-limpar{background:rgba(177,92,255,.18);border:1px solid rgba(177,92,255,.35);color:#d8c7ff;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
+  .tk-limpar:active{background:rgba(177,92,255,.32)}
+  .tk-lista{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+  .tk-item{background:linear-gradient(145deg,rgba(58,37,105,.45),rgba(30,18,55,.55));border:1px solid rgba(177,92,255,.25);border-radius:14px;padding:14px 16px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+  .tk-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .tk-tipo{font-weight:700;color:#e9dcff;font-size:15px}
+  .tk-info{color:#a68fcc;font-size:13px;line-height:1.5}
+  .tk-info b{color:#d8c7ff}
+  .tk-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .tk-aberto{background:rgba(57,255,20,.14);color:#7dff5c;border:1px solid rgba(57,255,20,.35)}
+  .tk-fechado{background:rgba(255,90,140,.14);color:#ff7da6;border:1px solid rgba(255,90,140,.35)}`;
+  document.head.appendChild(st);
+}
+async function carregarTickets(){
+  cssTickets();
+  TICKETS_CACHE=[];
+  try{const {data}=await sb.from('tickets').select('*').order('criado_em',{ascending:false}).limit(200);if(data)TICKETS_CACHE=data;}catch(e){}
+  const abertos=TICKETS_CACHE.filter(t=>t.status==='aberto').length;
+  const fechados=TICKETS_CACHE.filter(t=>t.status==='fechado').length;
+  const total=TICKETS_CACHE.length;
+  const hojeStr=new Date().toISOString().slice(0,10);
+  const hoje=TICKETS_CACHE.filter(t=>String(t.criado_em||'').slice(0,10)===hojeStr).length;
+  const nums=document.querySelectorAll('#conteudo .cards .num');
+  if(nums.length>=4){contar(nums[0],abertos);contar(nums[1],fechados);contar(nums[2],total);contar(nums[3],hoje);}
+  renderTickets(TICKETS_CACHE);
+}
+function renderTickets(lista){
+  const box=document.getElementById('lista-tickets');
+  if(!box)return;
+  if(!lista.length){box.innerHTML=vazio('🎟️','Nenhum ticket encontrado','Assim que abrirem um ticket no Discord, ele aparece aqui. Tente limpar os filtros.');return;}
+  const EMOJI={suporte:'🛠️',denuncia:'🚨',imprensa:'📰'};
+  box.innerHTML=`<div class="tk-lista">`+lista.map(t=>{
+    const emo=EMOJI[t.tipo]||'🎟️';
+    const st=t.status==='aberto'
+      ?'<span class="tk-badge tk-aberto">🟢 Aberto</span>'
+      :'<span class="tk-badge tk-fechado">🔴 Fechado</span>';
+    const atend=t.atendente_nome?`Atendido por <b>${escapar(t.atendente_nome)}</b>`:'Ainda não atendido';
+    return `<div class="tk-item">
+      <div class="tk-topo"><span class="tk-tipo">${emo} Ticket #${escapar(t.ticket_id)} · ${escapar(t.tipo)}</span>${st}</div>
+      <div class="tk-info">Aberto por <b>${escapar(t.autor_nome||'Desconhecido')}</b> · ${formatarData(t.criado_em)}</div>
+      <div class="tk-info">${atend}</div>
+    </div>`;
+  }).join('')+`</div>`;
+}
+function filtrarTickets(){
+  const busca=(document.getElementById('tk-busca')?.value||'').toLowerCase().trim();
+  const data=document.getElementById('tk-data')?.value||'';
+  let lista=TICKETS_CACHE;
+  if(data)lista=lista.filter(t=>String(t.criado_em||'').slice(0,10)===data);
+  if(busca)lista=lista.filter(t=>{
+    const alvo=`${t.autor_nome||''} ${t.atendente_nome||''} ${t.ticket_id||''} ${t.tipo||''}`.toLowerCase();
+    return alvo.includes(busca);
+  });
+  renderTickets(lista);
+}
+function limparFiltros(){
+  const b=document.getElementById('tk-busca');if(b)b.value='';
+  const d=document.getElementById('tk-data');if(d)d.value='';
+  renderTickets(TICKETS_CACHE);
+}
+
 let chart;
 function irPara(pag){
   document.querySelectorAll('.menu-item').forEach(m=>m.classList.toggle('ativo',m.dataset.pag===pag));
   document.getElementById('conteudo').innerHTML=PAGS[pag]();
   animarNums();
   if(pag==='grafico')desenharGrafico();
+  if(pag==='tickets')carregarTickets();
   fecharMenu();
   window.scrollTo(0,0);
 }
@@ -126,4 +208,5 @@ async function desenharGrafico(){
 
 sb.auth.onAuthStateChange(()=>checar());
 checar();
-  
+
+                                        
