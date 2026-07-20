@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>Painel · Torcida dos Dibrados F.C</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Sora:wght@400;500;600;700&family=Teko:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="assets/style.css"/>
@@ -18,22 +18,22 @@
 <!-- LOGIN -->
 <div id="login" class="tela">
   <div class="login-box">
-    <div class="cobra">🐍</div>
-    <h1>PAINEL<br>DIBRADOS</h1>
+    <img class="logo-time" src="https://i.imgur.com/2FzSWYP.png" alt="Dibrados F.C"/>
+    <h1>PAINEL DIBRADOS</h1>
     <p>Área restrita da equipe. Entre com sua conta do Discord para acessar o painel da torcida.</p>
     <button class="btn-discord" onclick="entrar()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.4a14.6 14.6 0 0 1 4.3 2.2 18.6 18.6 0 0 0-15 0 14.6 14.6 0 0 1 4.3-2.2L8.6 3A19.8 19.8 0 0 0 3.7 4.4C.6 9 .1 13.5.3 17.9A20 20 0 0 0 6.4 21l.4-.6a12 12 0 0 1-2.1-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.7.4-1.4.7-2.1 1l.4.6a20 20 0 0 0 6.1-3.1c.3-5-.5-9.5-2.2-13.1ZM8.3 15.3c-1.2 0-2.1-1.1-2.1-2.4S7 10.5 8.3 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>
       Entrar com Discord
     </button>
     <div class="selo-seg">🔒 Acesso protegido · só equipe autorizada</div>
-    <div class="rodape-login">🐍 Torcida dos Dibrados F.C 💜</div>
+    <div class="rodape-login">Torcida dos Dibrados F.C 💜</div>
   </div>
 </div>
 
 <!-- NEGADO -->
 <div id="negado" class="tela">
   <div class="login-box">
-    <div class="cobra" style="filter:drop-shadow(0 0 22px #ff3d6e)">⛔</div>
+    <div class="neg-ic">⛔</div>
     <h1 style="color:#ff6b8a;-webkit-text-fill-color:#ff6b8a">ACESSO NEGADO</h1>
     <p>Sua conta não está na lista da equipe. Fale com a diretoria para liberar seu acesso.</p>
     <button class="btn-sair" onclick="sair()">Sair</button>
@@ -42,19 +42,17 @@
 
 <!-- APP -->
 <div id="app">
-  <!-- TOPO MOBILE -->
   <header class="topbar">
     <button class="hamburguer" onclick="toggleMenu()">☰</button>
-    <div class="tb-titulo">🐍 Painel Dibrados</div>
+    <div class="tb-titulo"><img src="https://i.imgur.com/2FzSWYP.png" class="tb-logo"/> Painel Dibrados</div>
     <img id="tbAvatar" class="tb-avatar" src="" alt=""/>
   </header>
 
-  <!-- MENU LATERAL -->
   <aside class="sidebar" id="sidebar">
     <div class="side-topo">
-      <div class="side-logo">🐍</div>
+      <img src="https://i.imgur.com/2FzSWYP.png" class="side-logo-img"/>
       <div>
-        <div class="side-nome">Dibrados F.C</div>
+        <div class="side-nome">DIBRADOS F.C</div>
         <div class="side-sub">Painel da Torcida</div>
       </div>
     </div>
@@ -74,8 +72,7 @@
   </aside>
   <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-  <!-- CONTEUDO -->
-  <main class="conteudo" id="conteudo"><!-- páginas injetadas via JS --></main>
+  <main class="conteudo" id="conteudo"></main>
 </div>
 
 <script src="assets/app.js"></script>
