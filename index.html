@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Painel · Torcida dos Dibrados F.C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="assets/style.css"/>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+
+<!-- LOGIN -->
+<div id="login" class="tela">
+  <div class="login-box">
+    <div class="cobra">🐍</div>
+    <h1>PAINEL<br>DIBRADOS</h1>
+    <p>Área restrita da equipe. Entre com sua conta do Discord para acessar o painel da torcida.</p>
+    <button class="btn-discord" onclick="entrar()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.4a14.6 14.6 0 0 1 4.3 2.2 18.6 18.6 0 0 0-15 0 14.6 14.6 0 0 1 4.3-2.2L8.6 3A19.8 19.8 0 0 0 3.7 4.4C.6 9 .1 13.5.3 17.9A20 20 0 0 0 6.4 21l.4-.6a12 12 0 0 1-2.1-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.7.4-1.4.7-2.1 1l.4.6a20 20 0 0 0 6.1-3.1c.3-5-.5-9.5-2.2-13.1ZM8.3 15.3c-1.2 0-2.1-1.1-2.1-2.4S7 10.5 8.3 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>
+      Entrar com Discord
+    </button>
+    <div class="selo-seg">🔒 Acesso protegido · só equipe autorizada</div>
+    <div class="rodape-login">🐍 Torcida dos Dibrados F.C 💜</div>
+  </div>
+</div>
+
+<!-- NEGADO -->
+<div id="negado" class="tela">
+  <div class="login-box">
+    <div class="cobra" style="filter:drop-shadow(0 0 22px #ff3d6e)">⛔</div>
+    <h1 style="color:#ff6b8a;-webkit-text-fill-color:#ff6b8a">ACESSO NEGADO</h1>
+    <p>Sua conta não está na lista da equipe. Fale com a diretoria para liberar seu acesso.</p>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPO MOBILE -->
+  <header class="topbar">
+    <button class="hamburguer" onclick="toggleMenu()">☰</button>
+    <div class="tb-titulo">🐍 Painel Dibrados</div>
+    <img id="tbAvatar" class="tb-avatar" src="" alt=""/>
+  </header>
+
+  <!-- MENU LATERAL -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-topo">
+      <div class="side-logo">🐍</div>
+      <div>
+        <div class="side-nome">Dibrados F.C</div>
+        <div class="side-sub">Painel da Torcida</div>
+      </div>
+    </div>
+    <nav class="menu">
+      <a class="menu-item ativo" data-pag="inicio" onclick="irPara('inicio')"><span>🏠</span> Início</a>
+      <a class="menu-item" data-pag="stats" onclick="irPara('stats')"><span>📊</span> Estatísticas</a>
+      <a class="menu-item" data-pag="visitas" onclick="irPara('visitas')"><span>👁️</span> Visitas do site</a>
+      <a class="menu-item" data-pag="membros" onclick="irPara('membros')"><span>👥</span> Membros</a>
+      <a class="menu-item" data-pag="tickets" onclick="irPara('tickets')"><span>🎟️</span> Tickets</a>
+      <a class="menu-item" data-pag="comandos" onclick="irPara('comandos')"><span>🤖</span> Comandos</a>
+      <a class="menu-item" data-pag="grafico" onclick="irPara('grafico')"><span>📈</span> Crescimento</a>
+      <a class="menu-item" data-pag="ranking" onclick="irPara('ranking')"><span>🏆</span> Ranking</a>
+      <a class="menu-item" data-pag="anuncios" onclick="irPara('anuncios')"><span>📢</span> Anúncios</a>
+      <a class="menu-item" data-pag="mod" onclick="irPara('mod')"><span>🛡️</span> Moderação</a>
+    </nav>
+    <button class="btn-logout" onclick="sair()">⏻ Sair</button>
+  </aside>
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+  <!-- CONTEUDO -->
+  <main class="conteudo" id="conteudo"><!-- páginas injetadas via JS --></main>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
