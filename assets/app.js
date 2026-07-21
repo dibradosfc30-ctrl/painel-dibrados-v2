@@ -18,6 +18,7 @@ async function checar(){
   const u=session.user;
   const did=u.user_metadata?.provider_id||u.user_metadata?.sub||"";
   if(!EQUIPE.includes(did)){tela('negado');return;}
+  USUARIO_ID=did;
   const av=u.user_metadata?.avatar_url;if(av)document.getElementById('tbAvatar').src=av;
   tela('app');
   await puxarDados();
@@ -113,6 +114,8 @@ const PAGS={
 };
 
 /* ===== TICKETS (dados reais do Supabase) ===== */
+const ADMINS=["1172008779202703465"]; // IDs que podem ver as conversas
+let USUARIO_ID=null;
 let TICKETS_CACHE=[];
 function escapar(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function formatarData(iso){if(!iso)return '';try{const d=new Date(iso);return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
@@ -129,19 +132,60 @@ function cssTickets(){
   .tk-limpar:active{background:rgba(177,92,255,.32)}
   .tk-lista{display:flex;flex-direction:column;gap:12px;margin-top:10px}
   .tk-item{background:linear-gradient(145deg,rgba(58,37,105,.45),rgba(30,18,55,.55));border:1px solid rgba(177,92,255,.25);border-radius:14px;padding:14px 16px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+  .tk-clicavel{cursor:pointer;transition:border-color .15s,transform .1s}
+  .tk-clicavel:active{transform:scale(.99)}
+  .tk-clicavel:hover{border-color:rgba(177,92,255,.6)}
   .tk-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
   .tk-tipo{font-weight:700;color:#e9dcff;font-size:15px}
   .tk-info{color:#a68fcc;font-size:13px;line-height:1.5}
   .tk-info b{color:#d8c7ff}
+  .tk-ver{margin-top:8px;font-size:12px;font-weight:700;color:#b15cff}
   .tk-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
   .tk-aberto{background:rgba(57,255,20,.14);color:#7dff5c;border:1px solid rgba(57,255,20,.35)}
-  .tk-fechado{background:rgba(255,90,140,.14);color:#ff7da6;border:1px solid rgba(255,90,140,.35)}`;
+  .tk-fechado{background:rgba(255,90,140,.14);color:#ff7da6;border:1px solid rgba(255,90,140,.35)}
+  .modal-fundo{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal-cx{background:linear-gradient(160deg,#241640,#160c2b);border:1px solid rgba(177,92,255,.4);border-radius:18px;width:100%;max-width:560px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 12px 50px rgba(0,0,0,.6)}
+  .modal-topo{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid rgba(177,92,255,.2)}
+  .modal-titulo{font-weight:800;color:#e9dcff;font-size:17px}
+  .modal-x{background:none;border:none;color:#b0a0d0;font-size:22px;cursor:pointer;line-height:1}
+  .modal-corpo{padding:16px 18px;overflow-y:auto}
+  .tk-conversa{display:flex;flex-direction:column;gap:10px}
+  .tk-msg{background:rgba(255,255,255,.04);border-radius:10px;padding:8px 12px}
+  .tk-msg-topo{display:flex;justify-content:space-between;gap:8px;margin-bottom:2px}
+  .tk-msg-topo b{color:#c9b3ff;font-size:13px}
+  .tk-msg-topo span{color:#7c6aa0;font-size:11px}
+  .tk-msg-txt{color:#e3d8ff;font-size:14px;line-height:1.45;word-break:break-word}
+  .tk-restrito{text-align:center;color:#ff9ebc;padding:10px 0;font-weight:700}`;
   document.head.appendChild(st);
+}
+function fecharModal(){const m=document.getElementById('modal-tk');if(m)m.remove();}
+function mostrarModal(titulo,corpoHtml){
+  fecharModal();
+  const d=document.createElement('div');d.id='modal-tk';d.className='modal-fundo';
+  d.onclick=e=>{if(e.target===d)fecharModal();};
+  d.innerHTML=`<div class="modal-cx"><div class="modal-topo"><span class="modal-titulo">${titulo}</span><button class="modal-x" onclick="fecharModal()">✕</button></div><div class="modal-corpo" id="modal-corpo">${corpoHtml}</div></div>`;
+  document.body.appendChild(d);
+}
+async function abrirConversa(id){
+  if(!ADMINS.includes(USUARIO_ID)){
+    mostrarModal('🔒 Acesso restrito','<div class="tk-restrito">Você não tem permissão para ver as conversas dos tickets.</div>');
+    return;
+  }
+  mostrarModal('🎟️ Ticket #'+id,'<div class="tk-info">Carregando conversa...</div>');
+  let texto=null;
+  try{const {data}=await sb.from('tickets').select('transcricao').eq('ticket_id',id).single();if(data)texto=data.transcricao;}catch(e){}
+  const corpo=document.getElementById('modal-corpo');
+  if(!corpo)return;
+  let msgs=[];try{if(texto)msgs=JSON.parse(texto);}catch(e){}
+  if(!msgs.length){corpo.innerHTML='<div class="tk-info">Nenhuma conversa registrada para este ticket.</div>';return;}
+  corpo.innerHTML='<div class="tk-conversa">'+msgs.map(m=>
+    `<div class="tk-msg"><div class="tk-msg-topo"><b>${escapar(m.autor)}</b><span>${escapar(m.hora)}</span></div><div class="tk-msg-txt">${escapar(m.conteudo)}</div></div>`
+  ).join('')+'</div>';
 }
 async function carregarTickets(){
   cssTickets();
   TICKETS_CACHE=[];
-  try{const {data}=await sb.from('tickets').select('*').order('criado_em',{ascending:false}).limit(200);if(data)TICKETS_CACHE=data;}catch(e){}
+  try{const {data}=await sb.from('tickets').select('ticket_id,tipo,autor_id,autor_nome,status,reivindicado_por,atendente_nome,fechado_por,criado_em,fechado_em').order('criado_em',{ascending:false}).limit(200);if(data)TICKETS_CACHE=data;}catch(e){}
   const abertos=TICKETS_CACHE.filter(t=>t.status==='aberto').length;
   const fechados=TICKETS_CACHE.filter(t=>t.status==='fechado').length;
   const total=TICKETS_CACHE.length;
@@ -158,14 +202,18 @@ function renderTickets(lista){
   const EMOJI={suporte:'🛠️',denuncia:'🚨',imprensa:'📰'};
   box.innerHTML=`<div class="tk-lista">`+lista.map(t=>{
     const emo=EMOJI[t.tipo]||'🎟️';
-    const st=t.status==='aberto'
-      ?'<span class="tk-badge tk-aberto">🟢 Aberto</span>'
-      :'<span class="tk-badge tk-fechado">🔴 Fechado</span>';
+    const fechado=t.status==='fechado';
+    const st=fechado
+      ?'<span class="tk-badge tk-fechado">🔴 Fechado</span>'
+      :'<span class="tk-badge tk-aberto">🟢 Aberto</span>';
     const atend=t.atendente_nome?`Atendido por <b>${escapar(t.atendente_nome)}</b>`:'Ainda não atendido';
-    return `<div class="tk-item">
+    const clique=fechado?` class="tk-item tk-clicavel" onclick="abrirConversa(${escapar(t.ticket_id)})"`:' class="tk-item"';
+    const ver=fechado?'<div class="tk-ver">👁️ Toque para ver a conversa</div>':'';
+    return `<div${clique}>
       <div class="tk-topo"><span class="tk-tipo">${emo} Ticket #${escapar(t.ticket_id)} · ${escapar(t.tipo)}</span>${st}</div>
       <div class="tk-info">Aberto por <b>${escapar(t.autor_nome||'Desconhecido')}</b> · ${formatarData(t.criado_em)}</div>
       <div class="tk-info">${atend}</div>
+      ${ver}
     </div>`;
   }).join('')+`</div>`;
 }
@@ -209,4 +257,4 @@ async function desenharGrafico(){
 sb.auth.onAuthStateChange(()=>checar());
 checar();
 
-                                        
+  
